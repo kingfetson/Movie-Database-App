@@ -5,13 +5,33 @@ import MovieList from "../components/MovieList";
 const Home = () => {
   const [query, setQuery] = useState("");
   const [movies, setMovies] = useState([]);
+  const [error, setError] = useState("");
 
   const searchMovies = async () => {
-    if (!query) return;
-    const response = await axios.get(
-      `https://www.omdbapi.com/?apikey=${process.env.REACT_APP_OMDB_API_KEY}&s=${query}`
-    );
-    setMovies(response.data.Search || []);
+    if (!query) {
+      setError("Please enter a movie name.");
+      return;
+    }
+
+    try {
+      const response = await axios.get("https://www.omdbapi.com/", {
+        params: {
+          apikey: process.env.REACT_APP_MOVIE_API_KEY, // ✅ matches .env variable
+          s: query
+        }
+      });
+
+      if (response.data.Response === "True") {
+        setMovies(response.data.Search);
+        setError("");
+      } else {
+        setMovies([]);
+        setError(response.data.Error || "No movies found.");
+      }
+    } catch (err) {
+      console.error("Error fetching movies:", err.message);
+      setError("Failed to fetch movies. Please try again later.");
+    }
   };
 
   return (
@@ -32,6 +52,9 @@ const Home = () => {
           Search
         </button>
       </div>
+
+      {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+
       <MovieList movies={movies} />
     </div>
   );
